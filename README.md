@@ -75,11 +75,11 @@ page (`home.jsp`) which we have secured.
 
 `IndexPage` property of the sampleApp.properties file in the `<APP_HOME>/WEB-INF/classes` directory is used to define 
 the landing page of the webapp which is also considered as an unsecured page.
-Also the same page is used as the page that user get redirected once the logout is done.
+Also the same page is used as the page that the user get redirected once the logout is done.
 Here we have set `<APP_HOME>/index.html` as the value of `IndexPage` property.
     IndexPage=/SampleApp/index.html
 
-By default, all other pages considered as secured pages. Hence `home.jsp` will be secured without any other configurations.
+By default, all the other pages are considered as secured pages. Hence `home.jsp` will be secured without any other configurations.
 
 ### Trigger authentication
 In the `<APP_HOME>/index.html` page, we have added the action for the login button to trigger a SAML authentication:
@@ -342,6 +342,17 @@ The index.html contains a login button which we would use to forward the user to
 
 1. The web app needs to be configured to read the attributes sent from the Identity Server upon successful
  authentication. In the SampleApp, we would customize the home.jsp file as follows to retrieve the user attributes.
+ 
+ First, we would need the following imports to be added to the home.jsp file.
+ 
+       ```
+       <%@ page import="io.asgardio.java.saml.sdk.util.SSOAgentConstants" %>
+       <%@ page import="io.asgardio.java.saml.sdk.bean.LoggedInSessionBean" %>
+       <%@ page import="io.asgardio.java.saml.sdk.bean.LoggedInSessionBean.SAML2SSO" %>
+       <%@ page import="java.util.Map" %>
+       %>
+      ```
+Next, by adding the following snippets, we would be able to retrieve the user claims as provided by the Identity Provider.
  
       ```
        <%
