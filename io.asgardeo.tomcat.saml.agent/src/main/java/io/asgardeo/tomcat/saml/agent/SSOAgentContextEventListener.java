@@ -43,11 +43,13 @@ import javax.servlet.ServletContextListener;
 public class SSOAgentContextEventListener implements ServletContextListener {
 
     private static Logger logger = Logger.getLogger(SSOAgentContextEventListener.class.getName());
+    Properties properties;
+    boolean skipKeystoreConfigs = false;
 
     @Override
     public void contextInitialized(ServletContextEvent servletContextEvent) {
 
-        Properties properties = new Properties();
+        properties = new Properties();
         try {
 
             ServletContext servletContext = servletContextEvent.getServletContext();
@@ -76,21 +78,36 @@ public class SSOAgentContextEventListener implements ServletContextListener {
                         + " context-param is not specified in the web.xml");
             }
 
-            SSOAgentX509Credential credential = new SSOAgentX509KeyStoreCredential(keyStoreInputStream,
-                    properties.getProperty(SSOAgentConstants.KEY_STORE_PASSWORD).toCharArray(),
-                    properties.getProperty(SSOAgentConstants.IDP_PUBLIC_CERT_ALIAS),
-                    properties.getProperty(SSOAgentConstants.IDP_PUBLIC_CERT),
-                    properties.getProperty(SSOAgentConstants.PRIVATE_KEY_ALIAS),
-                    properties.getProperty(SSOAgentConstants.PRIVATE_KEY_PASSWORD).toCharArray());
+            String keyStorePassword = getKeystoreConfig(SSOAgentConstants.KEY_STORE_PASSWORD);
+            String IdPPublicCertAlias = getKeystoreConfig(SSOAgentConstants.IDP_PUBLIC_CERT_ALIAS);
+            String IdPPublicCert = getKeystoreConfig(SSOAgentConstants.IDP_PUBLIC_CERT);
+            String PrivateKeyAlias = getKeystoreConfig(SSOAgentConstants.PRIVATE_KEY_ALIAS);
+            String privateKeyPassword = getKeystoreConfig(SSOAgentConstants.PRIVATE_KEY_PASSWORD);
 
             SSOAgentConfig config = new SSOAgentConfig();
             config.initConfig(properties);
-            config.getSAML2().setSSOAgentX509Credential(credential);
+
+            if (!skipKeystoreConfigs) {
+                SSOAgentX509Credential credential = new SSOAgentX509KeyStoreCredential(keyStoreInputStream,
+                        keyStorePassword.toCharArray(), IdPPublicCertAlias, IdPPublicCert, PrivateKeyAlias,
+                        privateKeyPassword.toCharArray());
+                config.getSAML2().setSSOAgentX509Credential(credential);
+            }
+
             servletContext.setAttribute(SSOAgentConstants.CONFIG_BEAN_NAME, config);
 
         } catch (IOException | SSOAgentException e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
         }
+    }
+
+    private String getKeystoreConfig(String property) {
+
+        if(StringUtils.isNotBlank(properties.getProperty(property))) {
+            return properties.getProperty(property);
+        }
+        skipKeystoreConfigs = true;
+        return null;
     }
 
     private Map<String, String> resolvePropertiesFromEnvironmentVariables(Properties properties) throws SSOAgentException {
